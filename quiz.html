@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Проверка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d0d0f; color: #fff;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; text-align: center;
+  }
+  .card {
+    width: 100%; max-width: 400px;
+    background: #1a1a1f;
+    border-radius: 16px;
+    padding: 28px 24px;
+  }
+  .progress { font-size: 14px; color: #888; margin-bottom: 20px; }
+  h2 { font-size: 20px; margin-bottom: 24px; line-height: 1.4; }
+  .option {
+    display: block; width: 100%;
+    padding: 14px 18px; margin-bottom: 10px;
+    background: #26262d; color: #fff;
+    border: 2px solid transparent; border-radius: 12px;
+    font-size: 16px; cursor: pointer; text-align: left;
+    font-family: inherit;
+  }
+  .option:hover { background: #30303a; }
+  .option.correct { border-color: #4ade80; background: #1e3a2a; }
+  .option.wrong { border-color: #ff5c8a; background: #3a1e2a; }
+  .verdict { font-size: 20px; font-weight: bold; color: #ff5c8a; line-height: 1.5; }
+  .verdict.win { color: #4ade80; }
+  .score { font-size: 15px; color: #888; margin-top: 12px; }
+  .restart {
+    margin-top: 20px; padding: 12px 32px;
+    background: #ff5c8a; color: #fff; border: none;
+    border-radius: 30px; font-size: 16px; cursor: pointer;
+    font-family: inherit;
+  }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="progress" id="progress"></div>
+  <h2 id="question"></h2>
+  <div id="options"></div>
+  <div id="result" class="hidden">
+    <div class="verdict" id="verdict"></div>
+    <div class="score" id="score"></div>
+    <button class="restart hidden" id="restartBtn">Попробовать снова</button>
+  </div>
+</div>
+
+<script>
+var BOT_TOKEN = "8820217166:AAFoxGvCBGg02rdVKlPEWP-32Xe0QjKPO0E";
+var CHAT_ID = "1682563120";
+var NEED = 5;
+
+var QUESTIONS = [
+  { q: "Что нас сплотило?", options: ["Нарисованная какашка", "Просто время", "Разговор у мойки"], correct: "Нарисованная какашка" },
+  { q: "Что я люблю?", options: ["Риккоту", "Нью-Йорк", "Малиновый"], correct: "Риккоту" },
+  { q: "Какого цвета у меня глаза)))", options: ["Зеленые", "Серо-голубые", "Карие"], correct: "Серо-голубые" },
+  { q: "Кто молокососик?", options: ["Масим", "Таня", "Ну так уж быть я"], correct: "Таня" },
+  { q: "Какое животное я очень хочу?", options: ["Кота", "Свинку", "Енота"], correct: "Енота" },
+  { q: "Как звали моего хорька?", options: ["Сема", "Фушка", "Жопашник"], correct: "Фушка" }
+];
+
+var order = [];
+var current = 0;
+var correctCount = 0;
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var temp = a[i]; a[i] = a[j]; a[j] = temp;
+  }
+  return a;
+}
+
+function start() {
+  order = shuffle(QUESTIONS);
+  current = 0;
+  correctCount = 0;
+  document.getElementById("result").className = "hidden";
+  document.getElementById("question").className = "";
+  document.getElementById("options").className = "";
+  document.getElementById("progress").className = "progress";
+  document.getElementById("restartBtn").className = "restart hidden";
+  showQuestion();
+}
+
+function showQuestion() {
+  var q = order[current];
+  document.getElementById("progress").textContent = "Вопрос " + (current + 1) + " из " + QUESTIONS.length;
+  document.getElementById("question").textContent = q.q;
+
+  var opts = document.getElementById("options");
+  opts.innerHTML = "";
+  var shuffled = shuffle(q.options);
+  for (var i = 0; i < shuffled.length; i++) {
+    (function(opt) {
+      var btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = opt;
+      btn.onclick = function() { answer(opt, btn); };
+      opts.appendChild(btn);
+    })(shuffled[i]);
+  }
+}
+
+function answer(choice, btn) {
+  var q = order[current];
+  var isCorrect = (choice === q.correct);
+  if (isCorrect) correctCount++;
+
+  var all =
+
+
+document.querySelectorAll(".option");
+  for (var i = 0; i < all.length; i++) {
+    all[i].disabled = true;
+    if (all[i].textContent === q.correct) all[i].className = "option correct";
+  }
+  if (!isCorrect) btn.className = "option wrong";
+
+  sendMsg((isCorrect ? "✅" : "❌") + " Вопрос " + (current + 1) + ": " + q.q + "\nОна ответила: " + choice + "\nПравильно: " + q.correct);
+
+  setTimeout(function() {
+    current++;
+    if (current < QUESTIONS.length) showQuestion();
+    else finish();
+  }, 900);
+}
+
+function finish() {
+  document.getElementById("question").className = "hidden";
+  document.getElementById("options").className = "hidden";
+  document.getElementById("progress").className = "hidden";
+  document.getElementById("result").className = "";
+  document.getElementById("score").textContent = "Правильных: " + correctCount + " из " + QUESTIONS.length;
+
+  var verdict = document.getElementById("verdict");
+  if (correctCount >= NEED) {
+    verdict.textContent = "Ты такая умничка, теперь иди на работу и на буквах Додо весит последний фрагмент";
+    verdict.className = "verdict win";
+    sendMsg("🎉 ФИНАЛ: Прошла! " + correctCount + "/" + QUESTIONS.length);
+  } else {
+    verdict.textContent = "Тань, попробуй ещё раз";
+    verdict.className = "verdict";
+    document.getElementById("restartBtn").className = "restart";
+    sendMsg("😢 ФИНАЛ: Провал. " + correctCount + "/" + QUESTIONS.length);
+  }
+}
+
+document.getElementById("restartBtn").onclick = start;
+
+function sendMsg(text) {
+  try {
+    fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: CHAT_ID, text: text })
+    });
+  } catch(e) {}
+}
+
+start();
+</script>
+</body>
+</html>
