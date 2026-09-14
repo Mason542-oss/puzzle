@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Собери</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d0d0f; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px; text-align: center;
+  }
+  h1 { font-size: 1.4rem; font-weight: 500; margin-bottom: 8px; opacity: .9; }
+  .hint { font-size: .85rem; opacity: .5; margin-bottom: 20px; }
+  .board {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 4px; width: min(90vw, 360px); aspect-ratio: 1 / 1;
+    background: #1a1a1f; padding: 4px; border-radius: 12px;
+  }
+  .tile {
+    background-size: 400% 400%; background-repeat: no-repeat;
+    border-radius: 6px; cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .tile.selected {
+    box-shadow: 0 0 0 3px #ff5c8a;
+    transform: scale(0.95); z-index: 2;
+  }
+  .result {
+    margin-top: 24px; font-size: 1.6rem; font-weight: 600;
+    color: #ff5c8a; opacity: 0; transform: translateY(10px);
+    transition: all .5s;
+  }
+  .result.show { opacity: 1; transform: translateY(0); }
+  .next-btn {
+    margin-top: 20px; padding: 12px 32px;
+    background: #ff5c8a; color: #fff; border: none;
+    border-radius: 30px; font-size: 1rem; font-weight: 600;
+    cursor: pointer; display: none;
+  }
+  .next-btn.show { display: inline-block; }
+  .stage { display: none; flex-direction: column; align-items: center; }
+  .stage.active { display: flex; }
+</style>
+</head>
+<body>
+
+<div class="stage active" id="stage1">
+  <h1>Собери картинку</h1>
+  <p class="hint">Нажимай на два кусочка, чтобы поменять их местами</p>
+  <div class="board" id="board1"></div>
+  <div class="result" id="result1">Иди на</div>
+  <button class="next-btn" id="nextBtn" onclick="goStage2()">Дальше →</button>
+</div>
+
+<div class="stage" id="stage2">
+  <h1>Ещё одна</h1>
+  <p class="hint">Нажимай на два кусочка, чтобы поменять их местами</p>
+  <div class="board" id="board2"></div>
+  <div class="result" id="result2">гаражи. Там продолжение</div>
+</div>
+
+<script>
+const IMG1 = "1.jpg";
+const IMG2 = "2.jpg";
+
+const SIZE = 4;
+const TOTAL = SIZE * SIZE;
+
+function createBoard(boardEl, imgSrc, onWin) {
+  let tiles = [];
+  let selected = null;
+  const correct = [...Array(TOTAL).keys()];
+  let shuffled = [...correct];
+  do {
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+  } while (shuffled.every((v, i) => v === i));
+  tiles = shuffled;
+
+  function render() {
+    boardEl.innerHTML = "";
+    tiles.forEach((tileIndex, pos) => {
+      const div = document.createElement("div");
+      div.className = "tile";
+      const row = Math.floor(tileIndex / SIZE);
+      const col = tileIndex % SIZE;
+      div.style.backgroundImage = `url(${imgSrc})`;
+      div.style.backgroundPosition = `${(col / (SIZE - 1)) * 100}% ${(row / (SIZE - 1)) * 100}%`;
+      if (selected === pos) div.classList.add("selected");
+      div.onclick = () => handleClick(pos);
+      boardEl.appendChild(div);
+    });
+  }
+
+  function handleClick(pos) {
+    if (selected === null) selected = pos;
+    else if (selected === pos) selected = null;
+    else {
+      [tiles[selected], tiles[pos]] = [tiles[pos], tiles[selected]];
+      selected = null;
+    }
+    render();
+    checkWin();
+  }
+
+  function checkWin() {
+    if (tiles.every((v, i) => v === i)) setTimeout(onWin, 300);
+  }
+
+  render();
+}
+
+createBoard(document.getElementById("board1"), IMG1, () => {
+  document.getElementById("result1").classList.add("show");
+  document.getElementById("nextBtn").classList.add("show");
+});
+
+function goStage2() {
+  document.getElementById("stage1").classList.remove("active");
+  document.getElementById("stage2").classList.add("active");
+  createBoard(document.getElementById("board2"), IMG2, () => {document.getElementById("result2").classList.add("show");
+  });
+}
+</script>
+</body>
+</html>
